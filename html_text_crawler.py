@@ -2,10 +2,11 @@
 
 import re
 import urllib2
+import os
 
 from fonts_decoder.fonts_decoder import FontDecoder
 from drivers.crawler_driver import CD
-
+from setting import base_dir
 
 def get_web_html(target_url):
     html_text = CD.get_html(target_url)
@@ -19,7 +20,7 @@ def get_web_html(target_url):
             r = urllib2.Request(font_url, headers=crawler_headers.common_headers)
             response = urllib2.urlopen(r)
             font_content = response.read()
-            font_file_path = './download_fonts/%s' % match.group(1)
+            font_file_path = os.path.join(base_dir, 'download_fonts/%s' % match.group(1))
             with open(font_file_path, 'wb') as fp:
                 fp.write(font_content)
             fd = FontDecoder(obj_font_file_path=font_file_path)
