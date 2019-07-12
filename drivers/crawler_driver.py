@@ -7,9 +7,8 @@ import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 try:
-    from landchina_crawler.settings import download_fonts_dir
+    from ..settings import download_fonts_dir
 except:
-    # sys.path.append('/home/ck/github_repo/landchina_crawler_v2')
     sys.path.append('../')
     from settings import download_fonts_dir
 
