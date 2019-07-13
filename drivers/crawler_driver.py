@@ -7,10 +7,11 @@ import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 try:
-    from ..settings import download_fonts_dir
+    from ..settings import base_dir, download_fonts_dir
 except:
-    sys.path.append('../')
-    from settings import download_fonts_dir
+    current_dir = os.path.dirname(__file__)
+    sys.path.append(os.path.join(current_dir, '../'))
+    from settings import base_dir, download_fonts_dir
 
 class CrawlerDriver(object):
     def __init__(self):
@@ -20,9 +21,9 @@ class CrawlerDriver(object):
         self.driver = None
 
         if os_platform.find('linux') != -1:
-            self.driver_path = './drivers/linux_chromedriver'
+            self.driver_path = os.path.join(base_dir, 'drivers/linux_chromedriver')
         elif os_platform.find('darwin') != -1:
-            self.driver_path = './drivers/mac_chromedriver'
+            self.driver_path = os.path.join(base_dir, 'drivers/mac_chromedriver')
         else:
             self.driver_path = 'null'
 
@@ -38,16 +39,31 @@ class CrawlerDriver(object):
         for arg in args:
             chrome_options.add_argument(arg)
 
+        self.driver = webdriver.Chrome(executable_path=(self.driver_path), \
+                          chrome_options=chrome_options)
+
+        # enabling headless download feature
+        """
+        there is currently a "feature" in chrome where
+        headless does not allow file download: https://bugs.chromium.org/p/chromium/issues/detail?id=696481#c80
+        This method is a hacky work-around until the official chromedriver support for this.
+        Requires chrome version 62.0.3196.0 or above.
+        """
+
+        # add missing support for chrome "send_command"  to selenium webdriver
+        self.driver.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')
+        params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': download_fonts_dir}}
+        command_result = self.driver.execute("send_command", params)
+        print('Response from browser:')
+        for k in command_result:
+            print('%s: %s' % (k, command_result[k]))
+
         chrome_options.add_experimental_option('prefs', {
             "download.default_directory": download_fonts_dir,
             # "download.prompt_for_download": False,
             # "download.directory_upgrade": True,
             # "safebrowsing.enabled": True
             })
-
-        self.driver = webdriver.Chrome(executable_path=(self.driver_path), \
-                          chrome_options=chrome_options)
-
         
     def get_html(self, url, sleep_time=5):
         self.driver.get(url)
@@ -66,8 +82,8 @@ class CrawlerDriver(object):
 
 
 CD = CrawlerDriver()
-# CD.set_driver_opt('headless')
-CD.set_driver_opt()
+CD.set_driver_opt('headless')
+# CD.set_driver_opt()
 
 if __name__ == '__main__':
     # base_url = 'http://landchina.com/default.aspx?tabid=261&wmguid=20aae8dc-4a0c-4af5-aedf-cc153eb6efdf&p='
